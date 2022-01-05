@@ -4,20 +4,27 @@ version: 0.x
 Author: zhai
 Date: 2022-01-04 15:49:31
 LastEditors: zhai
-LastEditTime: 2022-01-05 13:35:26
+LastEditTime: 2022-01-05 18:57:51
 '''
 
+from collections import defaultdict
 import re                           # 正则表达式库
-import os  
+import os
+from cntext.dictionary.dictionary import DUTIR_Ais, DUTIR_Haos, DUTIR_Jings, DUTIR_Jus, DUTIR_Les, DUTIR_Nus, DUTIR_Wus, STOPWORDS_zh  
 import docx
+import cntext
 from cntext.stats import term_freq, readability
 from cntext.sentiment import senti_by_hownet, senti_by_dutir
 from cntext import wordcloud
+import jieba
+from pyecharts.charts.basic_charts.wordcloud import WordCloud
 import pyecharts.options as opts
 from pyecharts.charts import Radar
 import random
 from pyecharts.charts import Bar
 import names
+
+# help(cntext)
 
 # 个人总结
 summarys = {}
@@ -47,7 +54,7 @@ def readdir(path):
             summarys[name] = text
 
 
-readdir("E:\\pj\\python\\summary\\doc")
+readdir("./doc")
 
 # 文本预处理
 # pattern = re.compile(u'\t|\n|\.|-|:|;|\)|\(|\?|"') # 定义正则表达式匹配模式（空格等）
@@ -63,6 +70,89 @@ print(senti1)
 # 使用知网Hownet词典进行(中)文本数据的情感分析，统计正、负情感信息出现次数(得分)
 senti2 = senti_by_hownet(text_all)
 print(senti2)
+
+
+
+def senti_by_dutir_detail(text):
+    """
+    使用大连理工大学情感本体库DUTIR，仅计算文本中各个情绪词出现次数
+    :param text:  中文文本字符串
+    :return: 返回文本情感统计信息，类似于这样{'words': 22, 'sentences': 2, '好': 0, '乐': 4, '哀': 0, '怒': 0, '惧': 0, '恶': 0, '惊': 0}
+    """
+    wordnum, sentences, hao, le, ai, nu, ju, wu, jing, stopwords =0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    sentences = len(re.split('[\.。！!？\?\n;；]+', text))
+    words = jieba.lcut(text)
+    wordnum = len(words)
+
+    # 统计词频
+    dict_hao = defaultdict(lambda: 0)
+    dict_le = defaultdict(lambda: 0)
+    dict_ai = defaultdict(lambda: 0)
+    dict_nu = defaultdict(lambda: 0)
+    dict_ju = defaultdict(lambda: 0)
+    dict_wu = defaultdict(lambda: 0)
+    dict_jing = defaultdict(lambda: 0)
+
+    for w in words:
+        if w in STOPWORDS_zh:
+            stopwords+=1
+        if w in DUTIR_Haos:
+            hao += 1
+            dict_hao[w] += 1
+        elif w in DUTIR_Les:
+            le += 1
+            dict_le[w] += 1
+        elif w in DUTIR_Ais:
+            ai += 1
+            dict_ai[w] += 1
+        elif w in DUTIR_Nus:
+            nu += 1
+            dict_nu[w] += 1
+        elif w in DUTIR_Jus:
+            ju += 1
+            dict_ju[w] += 1
+        elif w in DUTIR_Wus:
+            wu += 1
+            dict_wu[w] += 1
+        elif w in DUTIR_Jings:
+            jing += 1
+            dict_jing[w] += 1
+        else:
+            pass
+
+    result = {'word_num':wordnum,
+            'sentence_num':sentences,
+            'stopword_num':stopwords,
+            '好_num':hao, '乐_num':le, '哀_num':ai, '怒_num':nu, '惧_num':ju, '恶_num': wu, '惊_num':jing,
+            '好_dict':dict_hao,
+            '乐_dict':dict_le,
+            '哀_dict':dict_ai,
+            '怒_dict':dict_nu,
+            '惧_dict':dict_ju,
+            '恶_dict':dict_wu,
+            '惊_dict':dict_jing
+            }
+    return result
+
+def wordcloud_by_dict(title, html_path, wordfreq_dict):
+    wordfreqs = [(word, str(freq)) for word, freq in wordfreq_dict.items()]
+    wc = WordCloud()
+    wc.add(series_name="", data_pair=wordfreqs, word_size_range=[20, 100])
+    wc.set_global_opts(
+        title_opts=opts.TitleOpts(title=title,
+                                  title_textstyle_opts=opts.TextStyleOpts(font_size=23)
+                                  ),
+        tooltip_opts=opts.TooltipOpts(is_show=True))
+    wc.render(html_path)  #存储位置
+
+# 情感云图
+wordcloud_by_dict('好', 'output/词云图_好.html', senti1['好_dict'])
+wordcloud_by_dict('乐', 'output/词云图_乐.html', senti1['乐_dict'])
+wordcloud_by_dict('哀', 'output/词云图_哀.html', senti1['哀_dict'])
+wordcloud_by_dict('怒', 'output/词云图_怒.html', senti1['怒_dict'])
+wordcloud_by_dict('惧', 'output/词云图_惧.html', senti1['惧_dict'])
+wordcloud_by_dict('恶', 'output/词云图_恶.html', senti1['恶_dict'])
+wordcloud_by_dict('惊', 'output/词云图_惊.html', senti1['惊_dict'])
 
 # 输出词云图
 wordcloud(text=text_all, 
@@ -99,7 +189,7 @@ def random_color():
 for name in summarys.keys() :
     # print(name , summarys[name])
     senti = senti_by_dutir(summarys[name])
-    sen = [list(senti.values())[3:]]
+    sen = [list(senti.values())[3:10]]
    
     rad.add(
             series_name=name,
