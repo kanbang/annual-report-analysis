@@ -4,7 +4,7 @@ version: 0.x
 Author: zhai
 Date: 2022-01-04 15:49:31
 LastEditors: zhai
-LastEditTime: 2022-01-05 13:35:26
+LastEditTime: 2022-01-05 14:19:51
 '''
 
 import re                           # 正则表达式库
@@ -47,7 +47,7 @@ def readdir(path):
             summarys[name] = text
 
 
-readdir("E:\\pj\\python\\summary\\doc")
+readdir("./doc")
 
 # 文本预处理
 # pattern = re.compile(u'\t|\n|\.|-|:|;|\)|\(|\?|"') # 定义正则表达式匹配模式（空格等）
