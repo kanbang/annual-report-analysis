@@ -4,7 +4,7 @@ version: 0.x
 Author: zhai
 Date: 2022-01-04 15:49:31
 LastEditors: zhai
-LastEditTime: 2022-01-06 13:34:17
+LastEditTime: 2022-01-06 14:22:23
 '''
 
 from collections import defaultdict
@@ -22,9 +22,12 @@ import pyecharts.options as opts
 from pyecharts.charts import Radar
 from pyecharts.charts import Pie
 from pyecharts.charts import Bar
+from pyecharts.components import Table
+
 import random
 import names
 import pandas as pd
+from pyecharts.options.charts_options import ComponentTitleOpts
 
 
 # help(cntext)
@@ -138,18 +141,32 @@ readdir("./doc")
 # pattern = re.compile(u'\t|\n|\.|-|:|;|\)|\(|\?|"') # 定义正则表达式匹配模式（空格等）
 # text_all = re.sub(pattern, '', text_all)     # 将符合模式的字符去除
 
+##################################################################################################
 # 词频统计表
 freq = term_freq(text_all)
 freq_sorted=sorted(freq.items(),key=lambda x:x[1],reverse=True)  # 按字典集合中，每一个元组的第二个元素排列。
 
-keys =[key for key,value in freq_sorted]
-values =[value for key,value in freq_sorted]
+# keys =[key for key,value in freq_sorted]
+# values =[value for key,value in freq_sorted]
 
-df = pd.DataFrame({'词': keys, '频': values}) 
+# df = pd.DataFrame({'词': keys, '频': values}) 
+# df.to_html("./output/词频.html")
 
-df.to_html("./output/词频.html")
+
+table = Table()
+
+headers = ["序号", "词", "频"]
+rows =[[i, key,value] for i, (key,value) in enumerate(freq_sorted)]
+
+table.add(headers, rows)
+table.set_global_opts(
+    title_opts=ComponentTitleOpts(title="词频表", subtitle="所有文档词频汇总")
+)
+table.render("./output/词频.html")
 
 
+
+##################################################################################################
 # 使用大连理工大学情感本体库对文本进行情绪分析，统计各情绪词语出现次数
 senti1 = senti_by_dutir_detail(text_all)
 print(senti1)
@@ -224,6 +241,7 @@ outer_data_pair = [list(z) for z in zip(outer_x_data, outer_y_data)]
 
 
 
+##################################################################################################
 # 情感云图
 wordcloud_by_dict('好', './output/词云图_好.html', senti1['好_dict'])
 wordcloud_by_dict('乐', './output/词云图_乐.html', senti1['乐_dict'])
@@ -233,12 +251,14 @@ wordcloud_by_dict('惧', './output/词云图_惧.html', senti1['惧_dict'])
 wordcloud_by_dict('恶', './output/词云图_恶.html', senti1['恶_dict'])
 wordcloud_by_dict('惊', './output/词云图_惊.html', senti1['惊_dict'])
 
+##################################################################################################
 # 输出词云图
 wordcloud(text=text_all, 
           title='词云图', 
           html_path='./output/词云图-总.html')
 
 
+##################################################################################################
 # 输出情绪雷达图
 rad = Radar(init_opts=opts.InitOpts(width="1280px", height="720px", bg_color="#CCCCCC"))
 rad.add_schema(
@@ -284,6 +304,7 @@ rad.set_global_opts(
 rad.render("./output/情绪雷达图.html")
 
 
+##################################################################################################
 # 输出情绪堆叠柱状图
 
 pos = []
